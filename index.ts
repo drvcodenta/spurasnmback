@@ -1,7 +1,12 @@
 import express from "express";
+import dotenv from "dotenv";
+import Groq from "groq-sdk";
 import cors from "cors";
 import { supabase } from "./supabase";
 
+dotenv.config();
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -31,9 +36,35 @@ app.post("/chat/message", async (req, res) => {
     content: message
   });
 
-  // fake AI reply for now
-  const reply = "This is a placeholder response.";
+async function getSupportAgentReply(userMessage: any) {
+  try {
+    const chatCompletion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful customer support assistant for 'ShoeStore'. You are polite, concise, and only answer questions about shipping, returns, and inventory. If you don't know the answer, ask the user to leave their email."
+        },
+        {
+          role: "user",
+          content: userMessage,
+        },
+      ],
+      temperature: 1,
+      max_tokens: 1024,
+    });
+    return chatCompletion.choices[0]?.message?.content || "Sorry, I'm having trouble thinking.";
+  } catch (error: any) {
+    if (error.status === 429) {
+      return "I'm a bit busy right now! Please wait a few seconds and try again.";
+    }
+    console.error("Groq API Error:", error);
+    return "Sorry, there was an error processing your request.";
+  }
+}
 
+
+  const reply = await getSupportAgentReply(message);
   await supabase.from("messages").insert({
     conversation_id: conversationId,
     role: "assistant",

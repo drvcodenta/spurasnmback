@@ -15,8 +15,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
+    "axios": "^1.13.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "groq-sdk": "^0.37.0"
   }
 }
